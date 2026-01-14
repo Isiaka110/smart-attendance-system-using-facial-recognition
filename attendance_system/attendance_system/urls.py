@@ -32,6 +32,7 @@ urlpatterns = [
 path('confirm-registration/', views.confirm_registration, name='confirm_registration'),
 path('history/', views.attendance_history, name='history'),
 path('assessment/', views.assessment_report, name='assessment_report'),
+path('close-session/<int:session_id>/', views.close_session, name='close_session'),
 ]
 
 if settings.DEBUG:
