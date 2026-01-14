@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Registration | Smart Attendance</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --success: #27ae60;
+            --bg: #eef2f3;
+        }
+
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: var(--bg); 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .reg-card { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+            width: 100%; 
+            max-width: 500px;
+            text-align: center;
+        }
+
+        /* Camera & Preview */
+        .camera-box {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4/3;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            border: 4px solid var(--primary);
+        }
+        
+        video, canvas { width: 100%; height: 100%; object-fit: cover; }
+
+        /* Form Styling */
+        .form-group { margin-bottom: 15px; text-align: left; }
+        label { font-size: 0.85em; font-weight: bold; color: var(--primary); display: block; margin-bottom: 5px; }
+        input { 
+            width: 100%; 
+            padding: 12px; 
+            border: 2px solid #eee; 
+            border-radius: 8px; 
+            box-sizing: border-box; 
+            transition: 0.3s;
+        }
+        input:focus { border-color: var(--accent); outline: none; }
+
+        /* Buttons */
+        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+        .btn { 
+            flex: 1; 
+            padding: 14px; 
+            border: none; 
+            border-radius: 8px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.2s; 
+        }
+        .btn-capture { background: var(--primary); color: white; }
+        .btn-confirm { background: var(--success); color: white; display: none; }
+        .btn:hover { opacity: 0.9; transform: translateY(-2px); }
+
+        .back-link { display: block; margin-top: 20px; color: #777; text-decoration: none; font-size: 0.9em; }
+        .back-link:hover { color: var(--accent); }
+    </style>
+</head>
+<body>
+
+<div class="reg-card">
+    <h2 style="margin-top: 0; color: var(--primary);">Register New Student</h2>
+    
+    <div class="camera-box">
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas" style="display:none;"></canvas>
+    </div>
+
+    <div class="form-group">
+        <label>Student Identification Number</label>
+        <input type="text" id="student_id" placeholder="e.g. ENG-2026-001">
+    </div>
+
+    <div class="form-group">
+        <label>Full Name</label>
+        <div style="display: flex; gap: 10px;">
+            <input type="text" id="first_name" placeholder="First Name">
+            <input type="text" id="last_name" placeholder="Last Name">
+        </div>
+    </div>
+
+    <div class="btn-group">
+        <button class="btn btn-capture" id="capture-btn">Take Snapshot</button>
+        <button class="btn btn-confirm" id="confirm-btn">Confirm & Save</button>
+    </div>
+
+    <a href="{% url 'index' %}" class="back-link">← Cancel and Return to Dashboard</a>
+</div>
+
+<script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const captureBtn = document.getElementById('capture-btn');
+    const confirmBtn = document.getElementById('confirm-btn');
+    let imageData = null;
+
+    // Start Webcam
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+        .then(stream => { video.srcObject = stream; })
+        .catch(err => alert("Camera access denied: " + err));
+
+    captureBtn.onclick = () => {
+        if(captureBtn.innerText === "Retake Photo") {
+            video.style.display = 'block';
+            canvas.style.display = 'none';
+            confirmBtn.style.display = 'none';
+            captureBtn.innerText = "Take Snapshot";
+            captureBtn.style.background = "var(--primary)";
+            return;
+        }
+
+        // Capture Frame
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        imageData = canvas.toDataURL('image/jpeg');
+
+        // UI Feedback
+        video.style.display = 'none';
+        canvas.style.display = 'block';
+        confirmBtn.style.display = 'block';
+        captureBtn.innerText = "Retake Photo";
+        captureBtn.style.background = "#e67e22"; // Orange for retake
+    };
+
+    confirmBtn.onclick = () => {
+        const payload = {
+            first_name: document.getElementById('first_name').value,
+            last_name: document.getElementById('last_name').value,
+            student_id: document.getElementById('student_id').value,
+            image_data: imageData,
+            csrfmiddlewaretoken: '{{ csrf_token }}'
+        };
+
+        if(!payload.first_name || !payload.student_id) {
+            alert("Please provide at least a First Name and Student ID.");
+            return;
+        }
+
+        confirmBtn.innerText = "Saving...";
+        confirmBtn.disabled = true;
+
+        fetch('/confirm-registration/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams(payload)
+        })
+        .then(res => res.json())
+        .then(res => {
+            alert("Success! " + res.message);
+            window.location.href = "{% url 'index' %}";
+        })
+        .catch(err => {
+            alert("Error saving record.");
+            confirmBtn.innerText = "Confirm & Save";
+            confirmBtn.disabled = false;
+        });
+    };
+</script>
+
+</body>
+</html>
