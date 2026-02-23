@@ -15,6 +15,9 @@ from django.core.files.base import ContentFile
 recognizer = cv2.face.LBPHFaceRecognizer_create()
 detector = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
+def landing_page(request):
+    return render(request, 'core/landing.html')
+
 def train_recognizer():
     """Loads student data and trains the recognizer in memory."""
     students = Student.objects.all()

@@ -23,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-zn^6_-&sis6-o+0j4vhtgcgt@=f$#!r!@xyr9m(syz1h3%+6bx'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['your-app-name.onrender.com', '127.0.0.1']
 
@@ -127,3 +127,9 @@ STATIC_URL = 'static/'
 LOGIN_URL = '/admin/login/'
 TIME_ZONE = 'Africa/Lagos' # Use your specific location
 USE_TZ = True
+
+# Where to go after logging in
+LOGIN_REDIRECT_URL = '/dashboard/'
+
+# Where to go if you are not logged in and try to access the dashboard
+LOGIN_URL = '/admin/login/'
